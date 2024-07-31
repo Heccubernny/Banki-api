@@ -38,7 +38,6 @@ export class AddMoneyResponseDto {
   amount: number;
   userId: string;
   reference: string;
-  // might remove the balance Before
   previousBalance: number;
   newBalance: number;
   fullNameTransactionEntity: string;

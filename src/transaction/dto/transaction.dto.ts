@@ -1,3 +1,4 @@
+import { Transform, Type } from 'class-transformer';
 import {
   IsNotEmpty,
   IsNumber,
@@ -21,6 +22,8 @@ export class TransactionDto {
   @IsNumber()
   @Min(50)
   @Max(1000000)
+  @Type(() => Number)
+  @Transform(({ value }) => Number(value.toFixed(2)), { toClassOnly: true })
   amount: number;
   @IsString()
   @IsNotEmpty()

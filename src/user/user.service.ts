@@ -8,6 +8,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { hash } from 'bcryptjs';
 import { Model } from 'mongoose';
 import { userConstants } from 'src/helpers/appConstants';
+import { Utils } from 'src/helpers/utils';
 import { AppResponse } from './../helpers/response';
 import { CreateUserDto } from './dto/create-user.dto';
 import { RemoveUserDto } from './dto/remove-user.dto';
@@ -22,12 +23,19 @@ export class UserService {
       'password',
       'pin',
       'phoneNumber',
-      'createdAt',
       'updatedAt',
+      'transactions',
+      'role',
+      'payment',
+      'notification',
     ];
+
     const hashedPassword = (await hash(createUserDto.password, 8)).toString();
     const userExists = await this.userModel.findOne({
-      email: createUserDto.email,
+      $or: [
+        { email: createUserDto.email },
+        { phoneNumber: createUserDto.phoneNumber },
+      ],
     });
 
     if (userExists) {
@@ -45,8 +53,8 @@ export class UserService {
     // }
 
     const result = await createUser.save();
-    result.password = result.pin = undefined;
-    return result;
+    // result.password = result.pin = undefined;
+    return Utils.attributesToExclude(result, attributesToExclude);
   }
 
   async findAll() {

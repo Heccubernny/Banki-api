@@ -39,7 +39,7 @@ export class AuthController {
       authRequestDto.password,
     );
     console.log(result);
-    // response.setHeader('Set-Cookie', result.data);
+    response.setHeader('Set-Cookie', result.data);
 
     return result;
   }

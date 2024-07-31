@@ -84,7 +84,7 @@ export class AuthService {
     });
     const link = `Authentication=${access_token}; HttpOnly; Path=/; Max-Age=${this.configService.get<string>('JWT_EXPIRY')}`;
 
-    return link;
+    return access_token;
   }
   private async verifyPassword(password: string, hashPassword: string) {
     const doesItMatch = await compare(password, hashPassword);

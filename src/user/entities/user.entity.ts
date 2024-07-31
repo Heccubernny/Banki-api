@@ -3,9 +3,8 @@ import { Exclude, Type } from 'class-transformer';
 import { Max, MaxLength, Min } from 'class-validator';
 import mongoose, { HydratedDocument } from 'mongoose';
 import { Payment } from 'src/payment/entities/payment.entity';
-import { Transactions } from 'src/transaction/entities/transaction.entity';
+import { Transactions } from '../../transaction/entities/transaction.entity';
 import { Token, TokenSchema } from './token.entity';
-
 export type UserDocument = HydratedDocument<User>;
 
 // @modelOptions({
@@ -15,6 +14,11 @@ export type UserDocument = HydratedDocument<User>;
 //     toObject: { virtuals: true },
 //   },
 // })
+
+export enum Role {
+  USER = 'user',
+  ADMIN = 'admin',
+}
 @Schema({
   timestamps: true,
 })
@@ -45,11 +49,16 @@ export class User {
   @Prop({ default: false })
   isVerified: boolean;
 
-  @Prop({ default: 'user' })
-  role: string;
+  @Prop({ default: Role.USER, enum: Role })
+  role: Role;
 
-  @Prop({ required: true, default: 0 })
-  balance: string;
+  @Prop({
+    required: true,
+    default: 0,
+    get: (value: number) => Number(value.toFixed(2)),
+    set: (value: number) => Number(value.toFixed(2)),
+  })
+  balance: number;
 
   // Many to many
   // @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Category.name })
@@ -59,6 +68,7 @@ export class User {
   isActive: boolean;
   @Prop({ type: [mongoose.Schema.Types.ObjectId], ref: 'Transactions' })
   transactions: Transactions[];
+  // transactions: mongoose.Schema.Types.ObjectId[];
   @Prop()
   payment: Payment[];
   @Prop()

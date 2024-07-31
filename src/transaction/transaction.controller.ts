@@ -7,24 +7,24 @@ import {
   Param,
   Patch,
   Post,
-  UseGuards,
+  // UseGuards,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
 import {
-  ApiBearerAuth,
+  // ApiBearerAuth,
   ApiOperation,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+// import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { AddMoneyTransactionDto } from './dto/add-money-transaction.dto';
 import { TransactionDto } from './dto/transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { Transactions } from './entities/transaction.entity';
 import { TransactionService } from './transaction.service';
 
-@ApiBearerAuth()
+// @ApiBearerAuth()
 @ApiTags('Transaction')
 @Controller('api/v1/transaction')
 export class TransactionController {
@@ -38,7 +38,7 @@ export class TransactionController {
     type: Transactions,
   })
   @UsePipes(ValidationPipe)
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   fund(@Body() addMoneyTransactionDto: AddMoneyTransactionDto) {
     return this.transactionService.addMoney(addMoneyTransactionDto);
   }

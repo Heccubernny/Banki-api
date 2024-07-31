@@ -39,7 +39,7 @@ async function bootstrap() {
 
   // register all plugins and extension
   app.enableCors({ origin: '*' });
-  app.useGlobalPipes(new ValidationPipe({}));
+  app.useGlobalPipes(new ValidationPipe());
   app.useGlobalFilters(new ValidationErrorFilter());
   app.enableVersioning({ type: VersioningType.URI });
   app.use(helmet());

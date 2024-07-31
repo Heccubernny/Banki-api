@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   HttpStatus,
   Injectable,
@@ -9,17 +10,22 @@ import mongoose, { ClientSession, Model } from 'mongoose';
 import UUIDGenerator from 'src/helpers/UUIDGenerator';
 import { userConstants } from 'src/helpers/appConstants';
 import { AppResponse } from 'src/helpers/response';
-import { User, UserDocument } from 'src/user/entities/user.entity';
+import { User } from 'src/user/entities/user.entity';
 import { AddMoneyTransactionDto } from './dto/add-money-transaction.dto';
 import { TransactionDto } from './dto/transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
-import { Purpose, Transactions, TrnxType } from './entities/transaction.entity';
+import {
+  Purpose,
+  TransactionDocument,
+  Transactions,
+  TrnxType,
+} from './entities/transaction.entity';
 import TransactionRepository from './repository/transaction.repository';
 
 @Injectable()
 export class TransactionService {
   constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Transactions.name) private trnxModel: Model<Transactions>,
     private trnxRepo: TransactionRepository,
   ) {}
@@ -30,7 +36,7 @@ export class TransactionService {
     });
 
     if (!findAccountNumber) {
-      throw new NotFoundException(`Account nuber is not available`);
+      throw new NotFoundException(`Account number is not available`);
     }
     // gender to check if the person is a male then return mr or miss
     const getAccountNumber =
@@ -41,32 +47,101 @@ export class TransactionService {
     });
   }
 
+  async getCustomerDetails(accountNumber: string) {
+    const findAccountNumber = await this.userModel.findOne({
+      accountNumber,
+    });
+
+    if (!findAccountNumber) {
+      throw new NotFoundException(`Account number is not available`);
+    }
+
+    const getRecentTransactions = await this.trnxRepo.getCustomerTransaction(
+      findAccountNumber.accountNumber,
+    );
+
+    // let trnxResult;
+
+    // const getUserwithtransactions = await this.userModel
+    //   .aggregate([
+    //     { $match: { accountNumber: findAccountNumber.accountNumber } },
+    //     {
+    //       $lookup: {
+    //         from: 'transactions',
+    //         localField: 'transactions',
+    //         foreignField: '_id',
+    //         as: 'transactionDetails',
+    //       },
+    //     },
+    //   ])
+    //   .exec();
+
+    // const transactions = getRecentTransactions.map(async (trnx) => {
+    //   trnxResult = await this.trnxModel.find(trnx);
+    //   return trnxResult;
+    // });
+    return AppResponse.success({
+      message: `Successfully fetch ${accountNumber} recent transactions`,
+      data: getRecentTransactions,
+    });
+  }
   async tierLevelChecker(tierLevel, addMoneyTransactionDto) {
     if (tierLevel === 1) {
+      const getUser = await this.userModel.findOne({
+        accountNumber: addMoneyTransactionDto.receiver,
+      });
+
+      if (!getUser) {
+        throw new BadRequestException(userConstants.NOT_FOUND);
+      }
       // for transfer to someone with tier 1 priviledge
-      const tierOneAmountLimit = 200000;
-      if (addMoneyTransactionDto.amount > tierOneAmountLimit) {
+      const tierOneTransferAmountLimit = 200000.0;
+      if (
+        addMoneyTransactionDto.amount.toFixed(2) > tierOneTransferAmountLimit
+      ) {
+        // fix this issue. it still exceed more than 1 million
+        if (Number(getUser.balance.toFixed(2)) > Number(1000000.0)) {
+          throw new BadRequestException(
+            `Due to your current tier level, your balance can't exceed 1000000. Please try to upgrade to a higer tier`,
+          );
+        }
         return AppResponse.error({
           statusCode: 400,
-          message: `Maximum amount that can be funded is ${tierOneAmountLimit}`,
+          message: `Maximum amount that can be funded is ${tierOneTransferAmountLimit}`,
         });
       }
+
       if (tierLevel === 2) {
-        const tierTwoAmountLimit = 500000;
-        if (addMoneyTransactionDto.amount > tierTwoAmountLimit) {
+        const tierTwoTransferAmountLimit = 500000.0;
+        if (
+          addMoneyTransactionDto.amount.toFixed(2) > tierTwoTransferAmountLimit
+        ) {
+          if (Number(getUser.balance.toFixed(2)) > Number(5000000.0)) {
+            throw new BadRequestException(
+              `Due to your current tier level, your balance can't exceed 1000000. Please try to upgrade to a higer tier`,
+            );
+          }
           return AppResponse.error({
             statusCode: 400,
-            message: `Maximum amount that can be funded is ${tierTwoAmountLimit}`,
+            message: `Maximum amount that can be funded is ${tierTwoTransferAmountLimit}`,
           });
         }
       }
 
       if (tierLevel === 3) {
-        const tierThreeAmountLimit = 1000000;
-        if (addMoneyTransactionDto.amount > tierThreeAmountLimit) {
+        const tierThreeTransferAmountLimit = 1000000.0;
+        if (
+          addMoneyTransactionDto.amount.toFixed(2) >
+          tierThreeTransferAmountLimit
+        ) {
+          if (Number(getUser.balance.toFixed(2)) > Number(10000000.0)) {
+            throw new BadRequestException(
+              `Due to your current tier level, your balance can't exceed 1000000. Please try to upgrade to a higer tier`,
+            );
+          }
           return AppResponse.error({
             statusCode: 400,
-            message: `Maximum amount that can be funded is ${tierThreeAmountLimit}`,
+            message: `Maximum amount that can be funded is ${tierThreeTransferAmountLimit}`,
           });
         }
       }
@@ -83,16 +158,22 @@ export class TransactionService {
       }
 
       const tierLevel = accountNumber.tier;
-
+      console.log(
+        await this.tierLevelChecker(tierLevel, addMoneyTransactionDto),
+      );
+      await this.tierLevelChecker(tierLevel, addMoneyTransactionDto);
       await this.userModel.findOneAndUpdate(
         { accountNumber },
         { balance: accountNumber.balance + addMoneyTransactionDto.amount },
       );
 
-      await this.tierLevelChecker(tierLevel, addMoneyTransactionDto);
+      let fundAccount: TransactionDocument;
+
       switch (addMoneyTransactionDto.methodToUse) {
         case 'Bank Transfer':
-          await this.trnxModel.create({
+          // convert it to a reusable function
+          // get bank api to get the money from  and also option to choose from which bank he wants to make the bank transfer from
+          fundAccount = await this.trnxModel.create({
             trnxType: TrnxType.FUNDING,
             purpose: Purpose.DEPOSIT,
             amount: addMoneyTransactionDto.amount,
@@ -105,12 +186,18 @@ export class TransactionService {
             description: `Wallet Funding using ${addMoneyTransactionDto.methodToUse}`,
             fullNameTransactionEntity: `${accountNumber.firstName} ${accountNumber.lastName}`,
           });
+          break;
         case 'Card':
           console.log('Card it is');
+          break;
         case 'Deposit':
           console.log('Deposit with your bank');
+          break;
         case 'QR Code':
           console.log('QR Code');
+          break;
+        default:
+          console.log('Used method is not available');
       }
 
       await this.userModel.findOneAndUpdate(
@@ -124,8 +211,11 @@ export class TransactionService {
         },
       );
 
+      accountNumber.transactions.push(fundAccount.id);
+      accountNumber.save();
+
       return AppResponse.success({
-        message: 'Amount funded succefully to account',
+        message: `${addMoneyTransactionDto.amount} has been successfully added to your Banki wallet`,
       });
     } catch (err) {
       return AppResponse.error({ message: err.message });

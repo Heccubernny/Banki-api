@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 // import { ThrottlerModule } from '@nestjs/throttler';
 import { JwtModule } from '@nestjs/jwt';
+import * as Joi from 'joi';
 import { ActivityLogModule } from './activity-log/activity-log.module';
 import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
@@ -15,12 +16,16 @@ import { NotificationModule } from './notification/notification.module';
 import { OrganisationModule } from './organisation/organisation.module';
 import { PaymentModule } from './payment/payment.module';
 import { SettingModule } from './setting/setting.module';
+import {
+  Transactions,
+  TransactionSchema,
+} from './transaction/entities/transaction.entity';
 import { TransactionModule } from './transaction/transaction.module';
+import { TransactionService } from './transaction/transaction.service';
 import { User, UserSchema } from './user/entities/user.entity';
 import { UserController } from './user/user.controller';
 import { UserModule } from './user/user.module';
 import { UserService } from './user/user.service';
-import * as Joi from 'joi';
 
 @Module({
   imports: [
@@ -36,7 +41,10 @@ import * as Joi from 'joi';
     }),
     // ThrottlerModule.forRoot({ limit: 10, ttl: 60 }),
     MongooseModule.forRoot(process.env.DATABASE_URI),
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    MongooseModule.forFeature([
+      { name: User.name, schema: UserSchema },
+      { name: Transactions.name, schema: TransactionSchema },
+    ]),
     UserModule,
     ActivityLogModule,
     NotificationModule,
@@ -47,6 +55,6 @@ import * as Joi from 'joi';
     JwtModule,
   ],
   controllers: [AppController, AuthController, UserController],
-  providers: [AppService, AuthService, UserService],
+  providers: [AppService, AuthService, UserService, TransactionService],
 })
 export class AppModule {}

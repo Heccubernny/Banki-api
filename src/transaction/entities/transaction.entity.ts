@@ -42,9 +42,14 @@ export class Transactions {
     description: 'Transaction purpose',
   })
   purpose: string;
-  @Prop({ required: true, default: '0.0' })
+  @Prop({
+    required: true,
+    default: 0,
+    get: (value: number) => Number(value.toFixed(2)),
+    set: (value: number) => Number(value.toFixed(2)),
+  })
   @ApiProperty({
-    example: '4000',
+    example: 4000,
     required: true,
     description: 'Amount to tansfer purpose',
     minimum: 50,

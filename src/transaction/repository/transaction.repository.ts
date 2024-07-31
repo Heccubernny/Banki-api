@@ -11,7 +11,7 @@ import {
   Transactions,
   TrnxType,
 } from 'src/transaction/entities/transaction.entity';
-import { User, UserDocument } from 'src/user/entities/user.entity';
+import { User } from 'src/user/entities/user.entity';
 
 @Injectable()
 export default class TransactionRepository {
@@ -20,7 +20,7 @@ export default class TransactionRepository {
     private trnxModel: Model<Transactions>,
 
     @InjectModel(User.name)
-    private userModel: Model<UserDocument>,
+    private userModel: Model<User>,
   ) {}
 
   async debitAccount({
@@ -156,14 +156,18 @@ export default class TransactionRepository {
     );
 
     console.log(transaction);
+    // const getTrnxPurpose = transaction.purpose;
 
-    const message = {
-      notification: {
-        title: 'Debit',
-        body: `You just sent ₦ ${amount} to ${fullNameTransactionEntity}`,
-      },
-      token: user.token,
-    };
+    // const message = {
+    //   notification: {
+    //     title: 'Credit',
+    //     body:
+    //       getTrnxPurpose === 'Transfer'
+    //         ? `You just receive ₦ ${amount} from ${fullNameTransactionEntity}`
+    //         : `You got credited a sum of ₦ ${amount}`,
+    //   },
+    //   token: user.token,
+    // };
 
     // send this message to the notification system and also modify it to send a mail to the user if he option for mail notification in their settings preference
 
@@ -175,5 +179,51 @@ export default class TransactionRepository {
   }
   async availableBalance({ accountNumber }: { accountNumber: string }) {
     return await this.userModel.findOne({ accountNumber }, { balance: 1 });
+  }
+
+  async getUserRecentTransaction(accountNumber: string) {
+    const getAccountNumber = await this.userModel.findOne({
+      accountNumber,
+    });
+
+    const accountTransaction = getAccountNumber.transactions;
+    // if (accountTransaction.length === 0) {
+    //   return 'No transactions found';
+    // }
+    const getRecentTransactions = accountTransaction.reverse();
+    return getRecentTransactions;
+  }
+  async getCustomerTransactionByType(
+    accountNumber: string,
+    transactionType: string,
+  ) {
+    const getRecentTransactions =
+      await this.getUserRecentTransaction(accountNumber);
+    const getUserTransactionsByType = await this.trnxModel
+      .find(
+        {
+          _id: { $in: getRecentTransactions },
+          trnxType: { $eq: transactionType },
+        },
+        { updatedAt: 0, __v: 0 },
+      )
+      .exec();
+
+    return getUserTransactionsByType;
+  }
+
+  async getCustomerTransaction(accountNumber: string) {
+    const getRecentTransactions =
+      await this.getUserRecentTransaction(accountNumber);
+    const getUserWithtransactions = await this.trnxModel
+      .find(
+        {
+          _id: { $in: getRecentTransactions },
+        },
+        { updatedAt: 0, __v: 0 },
+      )
+      .exec();
+
+    return getUserWithtransactions;
   }
 }
