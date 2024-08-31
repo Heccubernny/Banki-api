@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpCode,
+  HttpException,
   HttpStatus,
   Post,
   Req,
@@ -16,6 +17,7 @@ import { Response } from 'express';
 import { RequestWithUser } from './auth.interface';
 import { AuthRequestDto, AuthResponseDto } from './dto/auth-response.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { LocalAuthGuard } from './local-auth.guard';
 
 @ApiResponse({
   description: 'Authentication endpoint',
@@ -26,22 +28,28 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('login')
   @HttpCode(HttpStatus.OK)
-  // @UseGuards(LocalAuthGuard)
+  @UseGuards(LocalAuthGuard)
+  @Post('login')
   async signIn(
     @Req() request: RequestWithUser,
     @Res() response: Response,
+
     @Body() authRequestDto: AuthRequestDto,
   ) {
-    const result = await this.authService.signIn(
-      authRequestDto.accountNumber,
-      authRequestDto.password,
-    );
-    console.log(result);
-    response.setHeader('Set-Cookie', result.data);
+    try {
+      const result = await this.authService.signIn(
+        authRequestDto.accountNumber,
+        authRequestDto.password,
+      );
 
-    return result;
+      console.log(result);
+      response.setHeader('Set-Cookie', result.data);
+
+      return response.send(request.user);
+    } catch (error) {
+      throw new HttpException('Invalid access', HttpStatus.BAD_REQUEST);
+    }
   }
   @Get('verify')
   @UseGuards(JwtAuthGuard)

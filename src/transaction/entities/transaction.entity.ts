@@ -4,6 +4,7 @@ import { Type } from 'class-transformer';
 import { IsIn, ValidateIf } from 'class-validator';
 import mongoose, { HydratedDocument } from 'mongoose';
 import { User } from 'src/user/entities/user.entity';
+import { ManyToOne } from 'typeorm';
 export type TransactionDocument = HydratedDocument<Transactions>;
 
 export enum TrnxType {
@@ -58,7 +59,7 @@ export class Transactions {
   amount: number;
 
   // Many to One
-
+  @ManyToOne(() => User, (user: User) => user.transactions)
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: User.name })
   @Type(() => User)
   userId: User;

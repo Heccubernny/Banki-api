@@ -36,7 +36,7 @@ export class TransactionService {
     });
 
     if (!findAccountNumber) {
-      throw new NotFoundException(`Account number is not available`);
+      throw new NotFoundException(`Invalid account number or phone number`);
     }
     // gender to check if the person is a male then return mr or miss
     const getAccountNumber =
@@ -46,6 +46,7 @@ export class TransactionService {
       data: getAccountNumber.balance,
     });
   }
+  //If bank account number and it's account detail is not found return Account verification failed. Please check the details or try again later
 
   async getCustomerDetails(accountNumber: string) {
     const findAccountNumber = await this.userModel.findOne({
@@ -301,14 +302,53 @@ export class TransactionService {
     }
   }
 
-  findAll() {
-    return `This action returns all transaction`;
+  async getUsersTransactionsByType(transactionType: string) {
+    const getFirstChar = transactionType.charAt(0);
+    const firstChar = transactionType.charAt(0).toUpperCase();
+    const modifiedTransactionType = transactionType.replace(
+      getFirstChar,
+      firstChar,
+    );
+
+    const result = await this.trnxRepo.getAllCustomerTransactionsByType(
+      modifiedTransactionType,
+    );
+    const finalResult = result.length
+      ? `${modifiedTransactionType.length}`
+      : 'No Transaction of this yet';
+
+    return AppResponse.success({
+      message: 'Fetch total transaction type',
+      data: finalResult,
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} transaction`;
-  }
+  async getAllUserTransactions() {
+    const transactions = await this.trnxModel.find({});
+    // console.log(transactions);
+    const getLatestTransactions = transactions.reverse();
 
+    return AppResponse.success({
+      message: 'Fetch all users transactions',
+      data: getLatestTransactions,
+    });
+  }
+  // admin Priveldge
+  async getTotalNumberOfWalletFunding() {
+    try {
+      const transactions = await this.trnxModel.find({
+        trnxType: 'Wallet Funding',
+      });
+      return AppResponse.success({
+        message: 'Total number of Wallet Funding has been retrieved',
+        data: transactions,
+      });
+    } catch (err) {
+      throw new BadRequestException(
+        `Unable to retrieve the total number of wallet funding transaction ${err.message}`,
+      );
+    }
+  }
   update(id: number, updateTransactionDto: UpdateTransactionDto) {
     return `This action updates 
     ${updateTransactionDto.amount}

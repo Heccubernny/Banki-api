@@ -91,6 +91,8 @@ export default class TransactionRepository {
       token: user.token,
     };
 
+    // message to sms
+
     return AppResponse.success({
       statusCode: HttpStatus.CREATED,
       message: 'Debited successfully',
@@ -210,6 +212,11 @@ export default class TransactionRepository {
       .exec();
 
     return getUserTransactionsByType;
+  }
+
+  async getAllCustomerTransactionsByType(transactionType: string) {
+    const result = await this.trnxModel.find({ trnxType: transactionType });
+    return result;
   }
 
   async getCustomerTransaction(accountNumber: string) {

@@ -51,19 +51,29 @@ export class AuthService {
     accountNumber: string,
     password: string,
   ): Promise<AppResponseSuccessInterface> {
-    const user: UserDocument = await this.userService.findOne(accountNumber);
+    try {
+      const user: UserDocument = await this.userService.findOne(accountNumber);
 
-    const passwordMatch = await this.verifyPassword(password, user.password);
-    if (!passwordMatch) {
-      throw new UnauthorizedException(`User ${accountNumber} does not exist`);
+      if (!user.accountNumber) {
+        throw new UnauthorizedException('Invalid Crediential');
+      }
+      const passwordMatch = await this.verifyPassword(password, user.password);
+      if (!passwordMatch) {
+        throw new UnauthorizedException(`Invalid Crediential`);
+      }
+
+      const access_token = await this.getCookiesWithJwtToken(user);
+      console.log(access_token);
+      return AppResponse.success({
+        message: 'Sign In successfully',
+        data: access_token,
+      });
+    } catch (error) {
+      throw new HttpException(
+        'Wrong credentials provided',
+        HttpStatus.BAD_REQUEST,
+      );
     }
-
-    const access_token = await this.getCookiesWithJwtToken(user);
-    console.log(access_token);
-    return AppResponse.success({
-      message: 'Sign In successfully',
-      data: access_token,
-    });
   }
 
   public getCookieForLogout() {
@@ -84,7 +94,7 @@ export class AuthService {
     });
     const link = `Authentication=${access_token}; HttpOnly; Path=/; Max-Age=${this.configService.get<string>('JWT_EXPIRY')}`;
 
-    return access_token;
+    return link;
   }
   private async verifyPassword(password: string, hashPassword: string) {
     const doesItMatch = await compare(password, hashPassword);

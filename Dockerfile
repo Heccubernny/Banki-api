@@ -6,6 +6,8 @@ RUN npm install --production
 
 COPY . /src
 
+# RUN npm run build
+
 EXPOSE 8085
 
-CMD ["node", "server.js"]
+CMD ["node"]

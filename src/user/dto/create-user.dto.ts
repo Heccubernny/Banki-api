@@ -4,11 +4,9 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  MaxLength,
-  MinLength,
+  Length,
 } from 'class-validator';
 import { Role } from '../entities/user.entity';
-
 export class CreateUserDto {
   @IsString()
   firstName: string;
@@ -30,8 +28,9 @@ export class CreateUserDto {
 
   @IsString()
   @IsNotEmpty()
-  @MinLength(11)
-  @MaxLength(11)
+  @Length(11, 11)
+  // @MinLength(11)
+  // @MaxLength(11)
   phoneNumber: string;
 
   // @IsNotEmpty()

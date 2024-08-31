@@ -7,6 +7,9 @@ import {
   Param,
   Patch,
   Post,
+  Query,
+  Req,
+  Res,
   // UseGuards,
   UsePipes,
   ValidationPipe,
@@ -18,6 +21,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 // import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { Request, Response } from 'express';
 import { AddMoneyTransactionDto } from './dto/add-money-transaction.dto';
 import { TransactionDto } from './dto/transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
@@ -56,14 +60,18 @@ export class TransactionController {
     return this.transactionService.availableBalance({ accountNumber });
   }
 
-  @Get()
-  findAll() {
-    return this.transactionService.findAll();
+  @Get('/all')
+  async getAllUserTransactions(
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
+    response.header('Access-control-Allow-Origin', '*');
+    return await this.transactionService.getAllUserTransactions();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.transactionService.findOne(+id);
+  @Get('')
+  getUsersTransactionsByType(@Query('trnxType') trnxType: string) {
+    return this.transactionService.getUsersTransactionsByType(trnxType);
   }
 
   @Patch(':id')
@@ -77,5 +85,11 @@ export class TransactionController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.transactionService.remove(+id);
+  }
+
+  @Get('total_wallet_funding')
+  getTotalWalletFunding(@Req() request: Request, @Res() response: Response) {
+    response.header('Access-control-Allow-Origin', '*');
+    return this.transactionService.getTotalNumberOfWalletFunding();
   }
 }

@@ -19,7 +19,7 @@ export class NotificationController {
 
   @Post()
   create(@Body() createNotificationDto: CreateNotificationDto) {
-    return this.notificationService.create(createNotificationDto);
+    return this.notificationService.sendPushNotification(createNotificationDto);
   }
 
   @Get()

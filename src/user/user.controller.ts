@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Session,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -21,7 +22,6 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post('/create')
-  
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createUserDto: CreateUserDto) {
     return this.userService.create(createUserDto);
@@ -29,7 +29,9 @@ export class UserController {
 
   @Get()
   @ApiBearerAuth()
-  findAll() {
+  findAll(@Session() session: Record<string, any>) {
+    session.visits = session.visits ? session.visits + 1 : 1;
+    console.log(session);
     return this.userService.findAll();
   }
 
@@ -48,6 +50,6 @@ export class UserController {
   @Delete()
   @ApiBearerAuth()
   remove(@Body() removeUserDto: RemoveUserDto) {
-    return this.userService.remove(removeUserDto);
+    return this.userService.closeAccount(removeUserDto);
   }
 }

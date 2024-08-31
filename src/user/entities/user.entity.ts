@@ -3,6 +3,7 @@ import { Exclude, Type } from 'class-transformer';
 import { Max, MaxLength, Min } from 'class-validator';
 import mongoose, { HydratedDocument } from 'mongoose';
 import { Payment } from 'src/payment/entities/payment.entity';
+import { OneToMany } from 'typeorm';
 import { Transactions } from '../../transaction/entities/transaction.entity';
 import { Token, TokenSchema } from './token.entity';
 export type UserDocument = HydratedDocument<User>;
@@ -40,7 +41,7 @@ export class User {
   accountNumber: string;
 
   @Prop({ required: true })
-  // @Exclude()
+  @Exclude()
   password: string;
 
   @Prop({ required: true, default: '0000' })
@@ -67,6 +68,10 @@ export class User {
   @Prop()
   isActive: boolean;
   @Prop({ type: [mongoose.Schema.Types.ObjectId], ref: 'Transactions' })
+  @OneToMany(
+    () => Transactions,
+    (transaction: Transactions) => transaction.userId,
+  )
   transactions: Transactions[];
   // transactions: mongoose.Schema.Types.ObjectId[];
   @Prop()

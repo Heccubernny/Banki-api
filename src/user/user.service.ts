@@ -60,7 +60,7 @@ export class UserService {
   async findAll() {
     const user = await this.userModel.findOne(
       { accountNumber: '9012345678' },
-      { pin: 0 },
+      { pin: 0, password: 0 },
     );
 
     return user;
@@ -75,7 +75,7 @@ export class UserService {
     return `This action updates a #${id} user`;
   }
 
-  async remove(removeUserDto: RemoveUserDto) {
+  async closeAccount(removeUserDto: RemoveUserDto) {
     const userExists = await this.userModel.findOne({
       email: removeUserDto.email,
     });

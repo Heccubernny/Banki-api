@@ -8,6 +8,7 @@ import {
 } from '@nestjs/swagger';
 import * as compression from 'compression';
 import * as cookieParser from 'cookie-parser';
+import * as session from 'express-session';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { ValidationErrorFilter } from './mongo-validation.filter';
@@ -39,12 +40,20 @@ async function bootstrap() {
 
   // register all plugins and extension
   app.enableCors({ origin: '*' });
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({ skipMissingProperties: true }));
   app.useGlobalFilters(new ValidationErrorFilter());
   app.enableVersioning({ type: VersioningType.URI });
   app.use(helmet());
   app.use(cookieParser());
   app.use(compression());
+  app.use(
+    session({
+      secret: 'secret-key',
+      resave: false,
+      saveUninitialized: false,
+      cookie: { secure: false },
+    }),
+  );
   await app.listen(4000, () => {
     console.log('🔥🔥🔥 Application connected on port 4000');
   });

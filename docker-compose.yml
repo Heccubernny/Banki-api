@@ -1,11 +1,17 @@
 version: '3.8'
 services:
   mongodb:
+    # mongo:latest
     image: mongo:6-jammy
     ports:
       - '27017:27017'
     volumes:
       - dbdata6:/data/db
+    environment:
+      # MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      # MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      # MONGO_INITDB_DATABASE: ${MONGO_DATABASE}
+      MONGO_INITDB_URL: ${DATABASE_URI}
 
 volumes:
   postgres:
